@@ -1,7 +1,6 @@
 package com.aditd5.mov.view.home
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aditd5.mov.databinding.FragmentHomeBinding
 import com.aditd5.mov.model.Film
-import com.aditd5.mov.util.Prefs
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -52,43 +50,23 @@ class HomeFragment : Fragment() {
 //            transaction.commit()
 //        }
 
-        setUsername()
+        setUserData()
         getMovieData()
     }
 
-    private fun setUsername() {
+    private fun setUserData() {
         val user = auth.currentUser
-        val uid = user?.uid
-        val name = Prefs.name
-        val uri = Prefs.imgProfileUri
+        val name = user?.displayName
+        val uri = user?.photoUrl
 
         if (user != null) {
             binding.tvName.text = name
-        }
 
-        if (uri != null) {
-            Picasso.get()
-                .load(uri)
-                .into(binding.ivImgProfile)
-        } else {
-            displayImgProfileFromFirebase(uid!!)
-        }
-    }
-
-    private fun displayImgProfileFromFirebase(uid: String) {
-        val imageRef = storage.reference.child("img_user/$uid.jpg")
-
-        imageRef.downloadUrl.addOnSuccessListener { uri ->
-            if (isAdded) {
-                binding.loading.visibility = View.INVISIBLE
-                Prefs.imgProfileUri = uri.toString()
+            if (uri != null) {
                 Picasso.get()
                     .load(uri)
                     .into(binding.ivImgProfile)
             }
-        } .addOnFailureListener {
-            Log.e("imgProfile", it.message.toString())
-            Prefs.imgProfileUri = null
         }
     }
 

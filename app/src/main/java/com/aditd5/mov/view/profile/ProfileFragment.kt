@@ -12,7 +12,6 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
@@ -22,12 +21,15 @@ import android.view.Window
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import com.aditd5.mov.R
 import com.aditd5.mov.databinding.ChooseImageDialogBinding
 import com.aditd5.mov.databinding.FragmentProfileBinding
+import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.auth.SignInActivity
 import com.google.firebase.auth.FirebaseAuth
@@ -45,12 +47,13 @@ class ProfileFragment : Fragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var storage: FirebaseStorage
 
-    private lateinit var imgUri: String
+    private lateinit var imgUri: Uri
 
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestCameraPermissionLauncher: ActivityResultLauncher<String>
 
-    private lateinit var imagePicker: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerOldApi: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerNewApi: ActivityResultLauncher<PickVisualMediaRequest>
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -85,10 +88,18 @@ class ProfileFragment : Fragment() {
             handleCameraPermissionResult(isGranted)
         }
 
-        imagePicker = registerForActivityResult(
+        imagePickerOldApi = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) {
             val uri = it.data?.data
+            if (uri != null) {
+                getBitmapFromUri(uri)
+            }
+        }
+
+        imagePickerNewApi = registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
             if (uri != null) {
                 getBitmapFromUri(uri)
             }
@@ -97,42 +108,66 @@ class ProfileFragment : Fragment() {
 
     private fun setUserData() {
         val user = auth.currentUser
-        val uri = Prefs.imgProfileUri
+        val uri = user?.photoUrl
+        val verified = user?.isEmailVerified
 
         if (user != null) {
             binding.apply {
                 etName.setText(user.displayName)
                 etEmail.setText(user.email)
-            }
-        }
 
-        if (uri != null) {
-            Picasso.get()
-                .load(uri)
-                .into(binding.ivProfile)
-            binding.btnDelete.visibility = View.VISIBLE
+                if (uri != null) {
+                    Picasso.get()
+                        .load(uri)
+                        .into(ivProfile)
+                    btnDelete.visibility = View.VISIBLE
+                }
+
+                if (verified!!) {
+                    ivVerified.setImageResource(R.drawable.ic_verified_user)
+                    btnEmailVerification.visibility = View.GONE
+                }
+            }
         }
     }
 
     private fun mainButton() {
         binding.apply {
+            val user = auth.currentUser
+            val uri = Prefs.imgProfileUri
+
             btnSave.setOnClickListener {
-                val user = auth.currentUser
-                val name = etName.text.toString()
-                val email = etEmail.text.toString()
+                val loading = LoadingDialog(requireActivity())
+                loading.showLoading()
+
+                val name = etName.text.toString().trimEnd()
+                val email = etEmail.text.toString().trimEnd()
 
                 if (user != null) {
-                    val profileUpdate =  UserProfileChangeRequest.Builder()
+                    UserProfileChangeRequest.Builder()
                         .setDisplayName(name)
-                        .build()
-
-                    user.updateProfile(profileUpdate)
-                        .addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                Prefs.name = name
-                                etName.clearFocus()
-                            } else {
-                                Toast.makeText(requireContext(), "Gagal mengupdate profile", Toast.LENGTH_SHORT).show()
+                        .setPhotoUri(uri!!.toUri())
+                        .build().also {
+                            user.updateProfile(it)
+                                .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    Prefs.name = name
+                                    etName.clearFocus()
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "Profile Updated",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    loading.dismissLoading()
+                                } else {
+                                    val errorMessage = task.exception?.message ?: "Failed"
+                                    Toast.makeText(
+                                        requireContext(),
+                                        errorMessage,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    loading.dismissLoading()
+                                }
                             }
                         }
                 }
@@ -143,11 +178,31 @@ class ProfileFragment : Fragment() {
             }
 
             ivProfile.setOnClickListener {
-                showChooseOpenDialog()
+                showDialog()
             }
 
             btnDelete.setOnClickListener {
                 deleteImgFromFirebase()
+            }
+
+            btnEmailVerification.setOnClickListener {
+                user!!.sendEmailVerification()
+                    .addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Email verifikasi sudah dikirim",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            val errorMessage = it.exception?.message ?: "Failed"
+                            Toast.makeText(
+                                requireContext(),
+                                errorMessage,
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
             }
         }
     }
@@ -161,7 +216,7 @@ class ProfileFragment : Fragment() {
         activity?.finishAffinity()
     }
 
-    private fun showChooseOpenDialog() {
+    private fun showDialog() {
         val chooseImageDialogBinding = ChooseImageDialogBinding.inflate(layoutInflater)
         val dialog = Dialog(requireActivity())
 
@@ -203,14 +258,24 @@ class ProfileFragment : Fragment() {
         uploadImgToFirebase(bitmap)
     }
 
+    @Suppress("DEPRECATION")
     private fun handleTakePictureResult(result: ActivityResult) {
         if (result.resultCode == RESULT_OK) {
             result.data?.let {
-                val imgBitmap = it.extras?.get("data") as Bitmap
-                uploadImgToFirebase(imgBitmap)
+//                val imgBitmap = it.extras?.get("data") as Bitmap
+                val imgBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    result.data?.getParcelableExtra("data", Bitmap::class.java)
+                } else {
+                    result.data?.getParcelableExtra("data")
+                }
+                uploadImgToFirebase(imgBitmap!!)
             }
         } else {
-            Toast.makeText(requireContext(), "Gagal mengambil gambar", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Gagal mengambil gambar",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -218,7 +283,11 @@ class ProfileFragment : Fragment() {
         if (isGranted) {
             takePicture()
         } else {
-            Toast.makeText(requireContext(), "Permission denied", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                "Permission denied",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
@@ -228,13 +297,12 @@ class ProfileFragment : Fragment() {
     }
 
     private fun pickImage() {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && SdkExtensions.getExtensionVersion(
-                Build.VERSION_CODES.R) >= 2) {
-            Intent(MediaStore.ACTION_PICK_IMAGES)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            imagePickerNewApi.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         } else {
-            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imagePickerOldApi.launch(intent)
         }
-        imagePicker.launch(intent)
     }
 
     private fun uploadImgToFirebase(imgBitmap: Bitmap) {
@@ -248,16 +316,14 @@ class ProfileFragment : Fragment() {
         val data = baos.toByteArray()
 
         imagesRef.putBytes(data, storageMetadata { contentType = "image/jpeg" })
-            .addOnCompleteListener {task->
+            .addOnCompleteListener { task->
                 if (task.isSuccessful) {
                     imagesRef.downloadUrl.addOnSuccessListener { uri->
                         binding.loading.visibility = View.INVISIBLE
-                        val uriString = uri.toString()
-                        imgUri = uriString
+                        Prefs.imgProfileUri = uri.toString()
                         Picasso.get()
-                            .load(uriString)
+                            .load(uri)
                             .into(binding.ivProfile)
-                        Prefs.imgProfileUri = imgUri
                         binding.btnDelete.visibility = View.VISIBLE
                     }
                 } else {
@@ -273,22 +339,49 @@ class ProfileFragment : Fragment() {
 
     private fun deleteImgFromFirebase() {
         binding.loading.visibility = View.VISIBLE
-        val uri = Prefs.imgProfileUri
-        val imageRef = storage.getReferenceFromUrl(uri!!)
+        val user = auth.currentUser
+        val uri = user?.photoUrl
 
-        imageRef.delete()
-            .addOnSuccessListener {
-                binding.apply {
-                    loading.visibility = View.INVISIBLE
-                    btnDelete.visibility = View.INVISIBLE
-                    ivProfile.setImageResource(R.drawable.ic_user_pic)
-                    Prefs.imgProfileUri = null
+        val imageRef = storage.getReferenceFromUrl(uri.toString())
+
+        if (user != null) {
+            imageRef.delete()
+                .addOnSuccessListener {
+                    binding.apply {
+                        loading.visibility = View.INVISIBLE
+                        btnDelete.visibility = View.INVISIBLE
+                        ivProfile.setImageResource(R.drawable.ic_user_pic)
+
+                        UserProfileChangeRequest.Builder()
+                            .setPhotoUri(null)
+                            .build().also {
+                                user.updateProfile(it)
+                                    .addOnCompleteListener {task ->
+                                        if (task.isSuccessful) {
+                                            Toast.makeText(
+                                                requireContext(),
+                                                "Profile Updated",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            binding.loading.visibility = View.INVISIBLE
+                                        } else {
+                                            val errorMessage = task.exception?.message ?: "Failed"
+                                            Toast.makeText(
+                                                requireContext(),
+                                                errorMessage,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            binding.loading.visibility = View.INVISIBLE
+                                        }
+                                    }
+                            }
+                    }
                 }
-            }
-            .addOnFailureListener {
-                binding.loading.visibility = View.INVISIBLE
-                Log.e("ProfileFragment", it.message.toString())
-            }
+                .addOnFailureListener {
+                    binding.loading.visibility = View.INVISIBLE
+                    Log.e("ProfileFragment", it.message.toString())
+                }
+        }
     }
 
     override fun onDestroyView() {

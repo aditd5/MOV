@@ -30,8 +30,8 @@ class SignInActivity : AppCompatActivity() {
     private fun mainButton() {
         binding.apply {
             btnSignin.setOnClickListener {
-                val email = etEmail.text.toString()
-                val password = etPassword.text.toString()
+                val email = etEmail.text.toString().trimEnd()
+                val password = etPassword.text.toString().trimEnd()
 
                 if (email.isEmpty()) {
                     etEmail.error = "Email tidak boleh kosong"
@@ -63,7 +63,7 @@ class SignInActivity : AppCompatActivity() {
                     val name = auth.currentUser?.displayName
                     Toast.makeText(
                         this,
-                        "Selamat datang $name",
+                        "Selamat Datang $name",
                         Toast.LENGTH_SHORT
                     ).show()
                     startActivity(Intent(this, HomeActivity::class.java))

@@ -11,7 +11,6 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.ext.SdkExtensions
 import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
@@ -19,14 +18,17 @@ import android.view.Window
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.aditd5.mov.databinding.ActivitySignUpPhotoBinding
 import com.aditd5.mov.databinding.ChooseImageDialogBinding
+import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.home.HomeActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storageMetadata
 import com.squareup.picasso.Picasso
@@ -39,13 +41,14 @@ class SignUpPhotoActivity : AppCompatActivity() {
     private lateinit var storage: FirebaseStorage
     private lateinit var auth: FirebaseAuth
 
-    private lateinit var imgUri: String
+    private lateinit var imgUri: Uri
     private lateinit var imgBitmap: Bitmap
 
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestCameraPermissionLauncher: ActivityResultLauncher<String>
 
-    private lateinit var imagePicker: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerOldApi: ActivityResultLauncher<Intent>
+    private lateinit var imagePickerNewApi: ActivityResultLauncher<PickVisualMediaRequest>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,10 +76,18 @@ class SignUpPhotoActivity : AppCompatActivity() {
             handleCameraPermissionResult(isGranted)
         }
 
-        imagePicker = registerForActivityResult(
+        imagePickerOldApi = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) {
             val uri = it.data?.data
+            if (uri != null) {
+                getBitmapFromUri(uri)
+            }
+        }
+
+        imagePickerNewApi = registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
             if (uri != null) {
                 getBitmapFromUri(uri)
             }
@@ -91,7 +102,7 @@ class SignUpPhotoActivity : AppCompatActivity() {
     private fun mainButton() {
         binding.apply {
             btnSelectPhoto.setOnClickListener {
-                showChooseOpenDialog()
+                showDialog()
             }
 
             btnSkip.setOnClickListener {
@@ -109,13 +120,14 @@ class SignUpPhotoActivity : AppCompatActivity() {
     private fun setBtnUpload() {
         binding.apply {
             btnUpload.visibility = View.VISIBLE
+
             btnUpload.setOnClickListener {
                 uploadImgToFirebase(imgBitmap)
             }
         }
     }
 
-    private fun showChooseOpenDialog() {
+    private fun showDialog() {
         val chooseImageDialogBinding = ChooseImageDialogBinding.inflate(layoutInflater)
         val dialog = Dialog(this)
 
@@ -164,10 +176,17 @@ class SignUpPhotoActivity : AppCompatActivity() {
         cameraLauncher.launch(takePictureIntent)
     }
 
+    @Suppress("DEPRECATION")
     private fun handleTakePictureResult(result: ActivityResult) {
         if (result.resultCode == RESULT_OK) {
             result.data?.let {
-                val imgBitmap = it.extras?.get("data") as Bitmap
+//                val imgBitmap = it.extras?.get("data") as Bitmap
+                val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    result.data?.getParcelableExtra("data", Bitmap::class.java)
+                } else {
+                    result.data?.getParcelableExtra("data")
+                }
+                imgBitmap = bitmap!!
                 binding.ivProfile.setImageBitmap(imgBitmap)
                 setBtnUpload()
             }
@@ -188,17 +207,18 @@ class SignUpPhotoActivity : AppCompatActivity() {
     }
 
     private fun pickImage() {
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && SdkExtensions.getExtensionVersion(
-                Build.VERSION_CODES.R) >= 2) {
-            Intent(MediaStore.ACTION_PICK_IMAGES)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            imagePickerNewApi.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         } else {
-            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imagePickerOldApi.launch(intent)
         }
-        imagePicker.launch(intent)
     }
 
     private fun uploadImgToFirebase(imgBitmap: Bitmap) {
-        binding.loading.visibility = View.VISIBLE
+//        binding.loading.visibility = View.VISIBLE
+        val loading = LoadingDialog(this)
+        loading.showLoading()
 
         val storageRef = storage.reference
         val fileName = auth.currentUser?.uid
@@ -209,31 +229,59 @@ class SignUpPhotoActivity : AppCompatActivity() {
         val data = baos.toByteArray()
 
         imagesRef.putBytes(data, storageMetadata { contentType = "image/jpeg" })
-            .addOnCompleteListener {task->
+            .addOnCompleteListener { task->
                 if (task.isSuccessful) {
                     imagesRef.downloadUrl.addOnSuccessListener { uri->
-                        val uriString = uri.toString()
-                        imgUri = uriString
                         Picasso.get()
-                            .load(uriString)
+                            .load(uri)
                             .into(binding.ivProfile)
-                        Prefs.imgProfileUri = imgUri
-                        startActivity(
-                            Intent(
-                                this,
-                                HomeActivity::class.java
-                            )
-                        )
-                        binding.loading.visibility = View.INVISIBLE
+
+                        setUserProfilePhoto(uri)
+//                        binding.loading.visibility = View.INVISIBLE
                     }
                 } else {
-                    binding.loading.visibility = View.INVISIBLE
+//                    binding.loading.visibility = View.INVISIBLE
                     Toast.makeText(
                         this,
                         "Gagal mengupload photo",
                         Toast.LENGTH_SHORT
                     ).show()
+                    loading.dismissLoading()
                 }
             }
+    }
+
+    private fun setUserProfilePhoto(uri: Uri) {
+        val loading = LoadingDialog(this)
+        loading.showLoading()
+
+        val user = auth.currentUser
+        if (user != null) {
+            UserProfileChangeRequest.Builder()
+                .setPhotoUri(uri)
+                .build().also {
+                    user.updateProfile(it)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                Prefs.imgProfileUri = uri.toString()
+                                Toast.makeText(
+                                    this@SignUpPhotoActivity,
+                                    "Selamat Datang ${user.displayName}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                startActivity(Intent(this, HomeActivity::class.java))
+                                loading.dismissLoading()
+                            } else {
+                                val errorMessage = task.exception?.message ?: "Failed"
+                                Toast.makeText(
+                                    this@SignUpPhotoActivity,
+                                    errorMessage,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                loading.dismissLoading()
+                            }
+                        }
+                }
+        }
     }
 }

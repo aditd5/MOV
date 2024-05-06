@@ -57,12 +57,20 @@ class SelectSeatActivity : AppCompatActivity() {
                             setButton()
                         } else if (selectedSeats.size > 4) {
                             seat.isClickable = false
-                            Toast.makeText(this, "Maksimal 5 kursi dalam 1 pesanan", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "Maksimal 5 kursi dalam 1 pesanan",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             selectedSeats.add(seatNumber)
                             seat.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPink))
                             val selectedSeat = "Seat $seatNumber selected"
-                            Toast.makeText(this, selectedSeat, Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                selectedSeat,
+                                Toast.LENGTH_SHORT
+                            ).show()
                             setButton()
                         }
                     }

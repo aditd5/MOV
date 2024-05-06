@@ -6,7 +6,6 @@ import android.util.Patterns.EMAIL_ADDRESS
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.aditd5.mov.databinding.ActivitySignUpBinding
-import com.aditd5.mov.model.User
 import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.google.firebase.auth.FirebaseAuth
@@ -36,10 +35,9 @@ class SignUpActivity : AppCompatActivity() {
             }
 
             btnSignup.setOnClickListener {
-                val name = binding.etName.text.toString()
-//                val username = binding.etUsername.text.toString()
-                val email = binding.etEmail.text.toString()
-                val password = binding.etPassword.text.toString()
+                val name = binding.etName.text.toString().trimEnd()
+                val email = binding.etEmail.text.toString().trimEnd()
+                val password = binding.etPassword.text.toString().trimEnd()
 
                 if (name.isEmpty()) {
                     etName.error = "Nama tidak boleh kosong"
@@ -49,14 +47,6 @@ class SignUpActivity : AppCompatActivity() {
                         "Nama tidak boleh kurang dari 4 karakter",
                         Toast.LENGTH_SHORT
                     ).show()
-//                } else if (username.isEmpty()) {
-//                    etUsername.error = "Username tidak boleh kosong"
-//                    etUsername.requestFocus()
-//                } else if (username.length < 4) {
-//                    Toast.makeText(this@SignUpActivity,
-//                        "Username tidak boleh kurang dari 4 karakter",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
                 } else if (email.isEmpty()) {
                     etEmail.error = "Email tidak boleh kosong"
                     etEmail.requestFocus()
@@ -82,40 +72,37 @@ class SignUpActivity : AppCompatActivity() {
         val loading = LoadingDialog(this)
         loading.showLoading()
 
-        val userData = User()
-        userData.name = name
-//        userData.username = username
-        userData.email = email
-        userData.password = password
-
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
-                    val profileUpdates = UserProfileChangeRequest.Builder()
-                        .setDisplayName(name)
-                        .build()
 
-                    user?.updateProfile(profileUpdates)
-                        ?.addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                Toast.makeText(this,
-                                    "Berhasil mendaftar",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                Prefs.isLogin = true
-                                Prefs.name = name
-                                startActivity(Intent(this, SignUpPhotoActivity::class.java))
-                                loading.dismissLoading()
-                            } else {
-                                val errorMessage = it.exception?.message ?: "Failed"
-                                Toast.makeText(this,
-                                    errorMessage,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                loading.dismissLoading()
+                    if (user != null) {
+                        UserProfileChangeRequest.Builder()
+                            .setDisplayName(name)
+                            .build().also {
+                                user.updateProfile(it)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Toast.makeText(this,
+                                                "Berhasil mendaftar",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            Prefs.isLogin = true
+                                            Prefs.name = name
+                                            startActivity(Intent(this, SignUpPhotoActivity::class.java))
+                                            loading.dismissLoading()
+                                        } else {
+                                            val errorMessage = task.exception?.message ?: "Failed"
+                                            Toast.makeText(this,
+                                                errorMessage,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            loading.dismissLoading()
+                                        }
+                                    }
                             }
-                        }
+                    }
                 } else {
                     val errorMessage = task.exception?.message ?: "Failed"
                     Toast.makeText(this,
