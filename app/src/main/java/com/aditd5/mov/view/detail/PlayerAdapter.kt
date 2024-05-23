@@ -4,10 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.aditd5.mov.databinding.RowItemPlayerBinding
-import com.aditd5.mov.model.Player
 import com.squareup.picasso.Picasso
 
-class PlayerAdapter(private val data: List<Player>) : RecyclerView.Adapter<PlayerAdapter.ViewHolder>() {
+class PlayerAdapter(private val actors: List<Map<String, String>>) : RecyclerView.Adapter<PlayerAdapter.ViewHolder>() {
 
     class ViewHolder(val binding: RowItemPlayerBinding): RecyclerView.ViewHolder(binding.root)
 
@@ -21,17 +20,17 @@ class PlayerAdapter(private val data: List<Player>) : RecyclerView.Adapter<Playe
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         with(holder.binding) {
-            with(data[position]) {
-                tvPlayername.text = this.name
+            with(actors[position]) {
+                tvPlayername.text = this["name"]
 
                 Picasso.get()
-                    .load(this.photo)
+                    .load(this["photoUrl"])
                     .into(ivPlayer)
             }
         }
     }
 
     override fun getItemCount(): Int {
-        return data.size
+        return actors.size
     }
 }

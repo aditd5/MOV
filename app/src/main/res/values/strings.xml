@@ -8,7 +8,6 @@
     <string name="cashless">Cashless</string>
     <string name="gunakan_e_wallet_untuk_transaksi_tiket_nonton">Gunakan e-wallet untuk transaksi tiket nonton</string>
     <string name="sign_in">Sign In</string>
-    <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="memulai">MEMULAI</string>
     <string name="daftar_akun_baru">DAFTAR AKUN BARU</string>
@@ -22,7 +21,6 @@
     <string name="simpan_lanjutkan"><![CDATA[SIMPAN & LANJUTKAN]]></string>
     <string name="idr_747_000">IDR 747.000</string>
     <string name="coming_soon">Coming Soon</string>
-    <string name="title_activity_home">HomeActivity</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
@@ -39,10 +37,6 @@
     <string name="booked">Booked</string>
     <string name="empty">Empty</string>
     <string name="selected">Selected</string>
-    <string name="a">A</string>
-    <string name="b">B</string>
-    <string name="c">C</string>
-    <string name="d">D</string>
     <string name="checkout">Checkout</string>
     <string name="date_amp_time"><![CDATA[Date & Time]]></string>
     <string name="detail">Details</string>
@@ -51,7 +45,6 @@
     <string name="pakuwon_mall_cinema_2">Pakuwon Mall, Cinema 2</string>
     <string name="items">Items</string>
     <string name="seat_c1">Seat C1</string>
-    <string name="seat_c2">Seat C2</string>
     <string name="price">Rp 40.000</string>
     <string name="total_price">Total Price</string>
     <string name="rp_80_000">Rp 80.000</string>
@@ -74,4 +67,7 @@
     <string name="kamera">Kamera</string>
     <string name="galeri">Galeri</string>
     <string name="lanjutkan">LANJUTKAN</string>
+    <string name="verifikasi_email">Verifikasi Email</string>
+    <string name="konfirmasi_password">Konfirmasi Password</string>
+    <string name="belum_aktif">Belum Aktif</string>
 </resources>

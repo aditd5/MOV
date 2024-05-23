@@ -7,6 +7,4 @@
 
     <style name="Theme.MOV" parent="Base.Theme.MOV" />
 
-    <style name="MyButtonStyle" />
-
 </resources>

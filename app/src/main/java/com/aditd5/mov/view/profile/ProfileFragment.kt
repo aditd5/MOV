@@ -24,7 +24,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import com.aditd5.mov.R
 import com.aditd5.mov.databinding.ChooseImageDialogBinding
@@ -33,6 +32,7 @@ import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.auth.SignInActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storageMetadata
@@ -45,9 +45,10 @@ class ProfileFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var auth: FirebaseAuth
+    private lateinit var user: FirebaseUser
     private lateinit var storage: FirebaseStorage
 
-    private lateinit var imgUri: Uri
+    private var imgUri: Uri? = null
 
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
     private lateinit var requestCameraPermissionLauncher: ActivityResultLauncher<String>
@@ -68,6 +69,7 @@ class ProfileFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         auth = FirebaseAuth.getInstance()
+        user = auth.currentUser!!
         storage = FirebaseStorage.getInstance()
 
         setupPermissions()
@@ -121,6 +123,7 @@ class ProfileFragment : Fragment() {
                         .load(uri)
                         .into(ivProfile)
                     btnDelete.visibility = View.VISIBLE
+                    imgUri = uri
                 }
 
                 if (verified!!) {
@@ -134,7 +137,6 @@ class ProfileFragment : Fragment() {
     private fun mainButton() {
         binding.apply {
             val user = auth.currentUser
-            val uri = Prefs.imgProfileUri
 
             btnSave.setOnClickListener {
                 val loading = LoadingDialog(requireActivity())
@@ -144,32 +146,61 @@ class ProfileFragment : Fragment() {
                 val email = etEmail.text.toString().trimEnd()
 
                 if (user != null) {
-                    UserProfileChangeRequest.Builder()
-                        .setDisplayName(name)
-                        .setPhotoUri(uri!!.toUri())
-                        .build().also {
-                            user.updateProfile(it)
-                                .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    Prefs.name = name
-                                    etName.clearFocus()
-                                    Toast.makeText(
-                                        requireContext(),
-                                        "Profile Updated",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    loading.dismissLoading()
-                                } else {
-                                    val errorMessage = task.exception?.message ?: "Failed"
-                                    Toast.makeText(
-                                        requireContext(),
-                                        errorMessage,
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    loading.dismissLoading()
-                                }
+//                    val uri = Prefs.imgProfileUri
+                    if (imgUri != null) {
+                        UserProfileChangeRequest.Builder()
+                            .setDisplayName(name)
+                            .setPhotoUri(imgUri)
+                            .build().also {
+                                user.updateProfile(it)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Prefs.name = name
+                                            etName.clearFocus()
+                                            Toast.makeText(
+                                                requireContext(),
+                                                "Profile Updated",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            loading.dismissLoading()
+                                        } else {
+                                            val errorMessage = task.exception?.message ?: "Failed"
+                                            Toast.makeText(
+                                                requireContext(),
+                                                errorMessage,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            loading.dismissLoading()
+                                        }
+                                    }
                             }
-                        }
+                    } else {
+                        UserProfileChangeRequest.Builder()
+                            .setDisplayName(name)
+                            .build().also {
+                                user.updateProfile(it)
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            Prefs.name = name
+                                            etName.clearFocus()
+                                            Toast.makeText(
+                                                requireContext(),
+                                                "Profile Updated",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            loading.dismissLoading()
+                                        } else {
+                                            val errorMessage = task.exception?.message ?: "Failed"
+                                            Toast.makeText(
+                                                requireContext(),
+                                                errorMessage,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            loading.dismissLoading()
+                                        }
+                                    }
+                            }
+                    }
                 }
             }
 
@@ -212,6 +243,7 @@ class ProfileFragment : Fragment() {
         Prefs.isLogin = false
         Prefs.name = ""
         Prefs.imgProfileUri = null
+        imgUri = null
         startActivity(Intent(activity, SignInActivity::class.java))
         activity?.finishAffinity()
     }
@@ -320,7 +352,8 @@ class ProfileFragment : Fragment() {
                 if (task.isSuccessful) {
                     imagesRef.downloadUrl.addOnSuccessListener { uri->
                         binding.loading.visibility = View.INVISIBLE
-                        Prefs.imgProfileUri = uri.toString()
+//                        Prefs.imgProfileUri = uri.toString()
+                        imgUri = uri
                         Picasso.get()
                             .load(uri)
                             .into(binding.ivProfile)
@@ -340,9 +373,9 @@ class ProfileFragment : Fragment() {
     private fun deleteImgFromFirebase() {
         binding.loading.visibility = View.VISIBLE
         val user = auth.currentUser
-        val uri = user?.photoUrl
+        val uri = Prefs.imgProfileUri
 
-        val imageRef = storage.getReferenceFromUrl(uri.toString())
+        val imageRef = storage.getReferenceFromUrl(imgUri.toString())
 
         if (user != null) {
             imageRef.delete()
@@ -360,9 +393,10 @@ class ProfileFragment : Fragment() {
                                         if (task.isSuccessful) {
                                             Toast.makeText(
                                                 requireContext(),
-                                                "Profile Updated",
+                                                "Foto profil dihapus",
                                                 Toast.LENGTH_SHORT
                                             ).show()
+                                            imgUri = null
                                             binding.loading.visibility = View.INVISIBLE
                                         } else {
                                             val errorMessage = task.exception?.message ?: "Failed"
