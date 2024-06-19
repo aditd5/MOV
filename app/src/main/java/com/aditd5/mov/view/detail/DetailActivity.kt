@@ -11,10 +11,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.aditd5.mov.databinding.ActivityDetailBinding
 import com.aditd5.mov.model.Movie
-import com.aditd5.mov.view.SelectSeatActivity
+import com.aditd5.mov.view.SeatActivity
 import com.google.firebase.firestore.FirebaseFirestore
 import com.squareup.picasso.Picasso
 
+@Suppress("DEPRECATION")
 class DetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDetailBinding
@@ -37,12 +38,10 @@ class DetailActivity : AppCompatActivity() {
 
         db = FirebaseFirestore.getInstance()
 
-        mainButton()
+        setButton()
         getData()
-        setPlayerData()
     }
 
-    @Suppress("DEPRECATION")
     private fun getData() {
         movie = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra("movie", Movie::class.java)
@@ -72,73 +71,17 @@ class DetailActivity : AppCompatActivity() {
                 adapter = playerAdapter
             }
 
-//            binding.btnNext.setOnClickListener {
-//                val intent = Intent(this@DetailActivity, SelectSeatActivity::class.java)
-//                intent.putExtra("movie", movie)
-//                startActivity(intent)
-//            }
+            binding.btnNext.setOnClickListener {
+                val intent = Intent(this@DetailActivity, SeatActivity::class.java)
+                intent.putExtra("movie", movie)
+                startActivity(intent)
+            }
         }
     }
 
-    private fun setPlayerData() {
-//        database.addValueEventListener(object : ValueEventListener {
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//
-//                val playerList = mutableListOf<Player>()
-//
-//                for (getDataSnapshot in snapshot.children) {
-//                    val player = getDataSnapshot.getValue(Player::class.java)
-//                    player.let {
-//                        playerList.add(it!!)
-//                    }
-//                }
-//                setPlayerData(playerList)
-//            }
-//
-//            override fun onCancelled(error: DatabaseError) {
-//                    Toast.makeText(
-//                        this@DetailActivity,
-//                        "Error ${error.message}"
-//                        , Toast.LENGTH_SHORT
-//                    ).show()
-//            }
-//        })
-
-//        val docRef = db.collection("movies")
-//            .document("dhwBP2adWbzcKdgBPJhE")
-//            .collection("aktor")
-//
-//            docRef.get()
-//                .addOnSuccessListener {
-//                    if (!it.isEmpty) {
-//                        val actorsList = mutableListOf<Aktor>()
-//
-//                        for (document in it) {
-//                            val actors = document.toObject(Aktor::class.java)
-//                            actorsList.add(actors)
-//                        }
-//
-//                        setPlayerData(actorsList)
-//                    } else {
-//                        Toast.makeText(this, "Kosong om", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//                .addOnFailureListener {
-//                    Toast.makeText(this, "Lah error", Toast.LENGTH_SHORT).show()
-//                }
-    }
-
-//    private fun setPlayerData(playerList: List<Actor>) {
-//        val playerAdapter = PlayerAdapter(playerList)
-//        binding.rvPlayer.apply {
-//            layoutManager = LinearLayoutManager(this@DetailActivity, LinearLayoutManager.HORIZONTAL, false)
-//            adapter = playerAdapter
-//        }
-//    }
-
-    private fun mainButton() {
+    private fun setButton() {
         binding.btnNext.setOnClickListener {
-            val intent = Intent(this, SelectSeatActivity::class.java)
+            val intent = Intent(this@DetailActivity, SeatActivity::class.java)
             intent.putExtra("movie", movie)
             startActivity(intent)
         }

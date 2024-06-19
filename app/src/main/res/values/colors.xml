@@ -6,4 +6,9 @@
     <color name="colorPink">#ED4169</color>
     <color name="colorBlueGrey">#292A50</color>
     <color name="whiteGrey">#AEAEAE</color>
+
+    <color name="colorSeatAvailable">#008577</color>
+    <color name="colorSeatSelected">#D81B60</color>
+    <color name="colorSeatOccupied">#555555</color>
+
 </resources>

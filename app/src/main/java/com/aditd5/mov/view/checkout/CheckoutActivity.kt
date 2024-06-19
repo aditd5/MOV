@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.aditd5.mov.view.checkout
 
 import android.app.Dialog
@@ -16,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.aditd5.mov.R
 import com.aditd5.mov.R.style
 import com.aditd5.mov.databinding.ActivityCheckoutBinding
 import com.aditd5.mov.databinding.CardTicketSuccessBinding
@@ -23,13 +22,17 @@ import com.aditd5.mov.model.Checkout
 import com.aditd5.mov.model.Movie
 import com.aditd5.mov.util.CurrencyFormatter
 import com.aditd5.mov.util.LoadingDialog
-import com.aditd5.mov.view.SelectSeatActivity
+import com.aditd5.mov.view.SeatActivity
 import com.aditd5.mov.view.home.HomeActivity
+import com.aditd5.mov.view.ticket.TicketFragment
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import java.time.Instant.now
+import com.google.firebase.firestore.ListenerRegistration
 
+@Suppress("DEPRECATION")
 class CheckoutActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCheckoutBinding
@@ -37,6 +40,7 @@ class CheckoutActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var user: FirebaseUser
     private lateinit var db: FirebaseFirestore
+    private lateinit var listener: ListenerRegistration
 
     private var movie: Movie? = null
     private var balance: Int? = null
@@ -64,7 +68,7 @@ class CheckoutActivity : AppCompatActivity() {
 
         loadingDialog = LoadingDialog(this)
 
-        mainButton()
+        setButton()
         setData()
     }
 
@@ -94,18 +98,35 @@ class CheckoutActivity : AppCompatActivity() {
 
     private fun getBalance() {
         val docRef = db.collection("users").document(user.uid)
-        docRef.get()
-            .addOnSuccessListener {
-                val isActive = it.get("wallet")
-                if (isActive == true) {
-                    val mBalance = it.get("balance")
-                    balance = mBalance.toString().toInt()
-                    binding.tvBalance.text = CurrencyFormatter().numberFormat(balance!!)
-                }
+        listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Toast.makeText(
+                    this,
+                    error.message,
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@addSnapshotListener
             }
+
+            if (snapshot != null && snapshot.exists()) {
+                val isActive = snapshot.get("wallet")
+                if (isActive == true) {
+                    val mBalance = snapshot.get("balance")
+                    val iBalance = mBalance.toString().toInt()
+                    balance = iBalance
+                    binding.tvBalance.text = CurrencyFormatter().numberFormat(iBalance)
+                }
+            } else {
+                Toast.makeText(
+                    this,
+                    "Data wallet tidak ditemukan",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
-    private fun mainButton() {
+    private fun setButton() {
         binding.apply {
             btnPay.setOnClickListener {
                 loadingDialog.showLoading()
@@ -118,42 +139,55 @@ class CheckoutActivity : AppCompatActivity() {
                     loadingDialog.dismissLoading()
                 } else {
                     checkout()
-//                    Toast.makeText(
-//                        this@CheckoutActivity,
-//                        seats.toString(),
-//                        Toast.LENGTH_SHORT
-//                    ).show()
                 }
             }
 
             btnCancel.setOnClickListener {
-                startActivity(Intent(this@CheckoutActivity, SelectSeatActivity::class.java))
+                startActivity(Intent(this@CheckoutActivity, SeatActivity::class.java))
             }
         }
     }
 
     private fun checkout() {
+        val now = Timestamp.now()
         val transactionData = hashMapOf(
-            "Uid" to user.uid,
-            "transactionDate" to now(),
-            "seats" to listOf(seats.toList()) ,
-            "movie" to movie!!.title,
-            "price" to totalPrice
+            "userId" to user.uid,
+            "movieId" to movie!!.movieId,
+            "seats" to seats,
+            "price" to totalPrice,
+            "createdAt" to now,
         )
 
         val docRef = db.collection("transactions").document()
         docRef.set(transactionData)
-            .addOnSuccessListener {
-                successDialog()
-                loadingDialog.dismissLoading()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    updateBalance()
+                } else {
+                    Toast.makeText(
+                        this,
+                        it.exception?.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    loadingDialog.dismissLoading()
+                }
             }
-            .addOnFailureListener {
-                Toast.makeText(
-                    this,
-                    it.message,
-                    Toast.LENGTH_SHORT
-                ).show()
-                loadingDialog.dismissLoading()
+    }
+
+    private fun updateBalance() {
+       val docRef = db.collection("users").document(user.uid)
+        docRef.update("balance", FieldValue.increment(-totalPrice!!.toLong()))  //mengurangi balance akun sesuai dengan harga
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    successDialog()
+                } else {
+                    Toast.makeText(
+                        this,
+                        it.exception?.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    loadingDialog.dismissLoading()
+                }
             }
     }
 
@@ -171,10 +205,19 @@ class CheckoutActivity : AppCompatActivity() {
         dialog.show()
 
         dialogBinding.btnTicket.setOnClickListener {
-
+            val transaction = supportFragmentManager.beginTransaction()
+            transaction.replace(R.id.nav_host_fragment_activity_home, TicketFragment())
+            transaction.commit()
         }
+
         dialogBinding.btnHome.setOnClickListener {
             startActivity(Intent(this, HomeActivity::class.java))
+            finishAffinity()
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        listener.remove()
     }
 }

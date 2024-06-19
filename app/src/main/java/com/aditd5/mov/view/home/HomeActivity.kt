@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment
 import com.aditd5.mov.R
 import com.aditd5.mov.databinding.ActivityHomeBinding
 import com.aditd5.mov.view.profile.ProfileFragment
+import com.aditd5.mov.view.ticket.TicketFragment
 
 class HomeActivity : AppCompatActivity() {
 
@@ -37,7 +38,8 @@ class HomeActivity : AppCompatActivity() {
                     loadFragment(ProfileFragment())
                 }
                 else -> {
-
+                    R.id.navigation_ticket
+                    loadFragment(TicketFragment())
                 }
             }
             true

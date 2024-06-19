@@ -5,6 +5,7 @@ import android.os.Parcelable
 import com.google.firebase.Timestamp
 
 data class Movie(
+    var movieId: String? = null ,
     var title: String? = null ,
     var synopsis: String? = null ,
     var genre: String? = null ,
@@ -15,19 +16,21 @@ data class Movie(
     var actors: List<Map<String, String>> = listOf()
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
+        parcel.readString()  ,
         parcel.readString() ,
         parcel.readString() ,
         parcel.readString() ,
         parcel.readString() ,
         parcel.readString() ,
-        parcel.readValue(Int::class.java.classLoader) as? Int,
-        parcel.readValue(Timestamp::class.java.classLoader)  as? Timestamp,
+        parcel.readValue(Int::class.java.classLoader) as? Int ,
+        parcel.readValue(Timestamp::class.java.classLoader)  as? Timestamp ,
         mutableListOf<HashMap<String, String>>().apply {
             parcel.readList(this as List<*>, HashMap::class.java.classLoader)
         }
     )
 
     override fun writeToParcel(parcel: Parcel , flags: Int) {
+        parcel.writeString(movieId)
         parcel.writeString(title)
         parcel.writeString(synopsis)
         parcel.writeString(genre)

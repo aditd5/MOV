@@ -70,4 +70,5 @@
     <string name="verifikasi_email">Verifikasi Email</string>
     <string name="konfirmasi_password">Konfirmasi Password</string>
     <string name="belum_aktif">Belum Aktif</string>
+    <string name="a1">A1</string>
 </resources>

@@ -31,7 +31,7 @@ class MovieAdapter(private val data: List<Movie> , private val status: String) :
                     .into(ivPoster)
 
                 cardView.setOnClickListener {
-                    val movie = Movie(title = this.title, synopsis = this.synopsis, genre = this.genre, rating = this.rating, price = this.price, posterUrl = this.posterUrl, actors = this.actors)
+                    val movie = Movie(movieId = this.movieId, title = this.title, synopsis = this.synopsis, genre = this.genre, rating = this.rating, price = this.price, posterUrl = this.posterUrl, actors = this.actors)
                     val context = holder.itemView.context
                     val intent = Intent(context, DetailActivity::class.java).apply {
                         putExtra("movie", movie)

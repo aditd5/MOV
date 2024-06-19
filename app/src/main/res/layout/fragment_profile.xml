@@ -7,22 +7,11 @@
     android:background="@color/background"
     tools:context=".view.profile.ProfileFragment">
 
-<!--    <ImageView-->
-<!--        android:id="@+id/btnBack"-->
-<!--        android:layout_width="32dp"-->
-<!--        android:layout_height="32dp"-->
-<!--        android:layout_marginStart="16dp"-->
-<!--        android:layout_marginTop="32dp"-->
-<!--        android:importantForAccessibility="no"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:srcCompat="@drawable/ic_arrow_back" />-->
-
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/montserrat_bold"
         android:text="@string/edit_profile"
         android:textColor="@color/white"

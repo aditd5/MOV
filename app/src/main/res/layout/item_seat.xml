@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/textViewSeat"
+    android:layout_width="24dp"
+    android:layout_height="24dp"
+    android:gravity="center"
+    android:background="@drawable/seat_background"
+    android:text="@string/a1"
+    android:textSize="12sp"
+    android:textColor="@android:color/white"/>

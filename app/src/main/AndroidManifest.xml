@@ -25,7 +25,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MOV"
         tools:targetApi="31">
-
+        <activity
+            android:name=".view.SeatActivity"
+            android:exported="false" />
         <activity
             android:name=".view.RoutingActivity"
             android:exported="true"
