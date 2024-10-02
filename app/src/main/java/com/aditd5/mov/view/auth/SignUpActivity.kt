@@ -22,10 +22,10 @@ class SignUpActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySignUpBinding
 
     private lateinit var auth: FirebaseAuth
-    private var user: FirebaseUser? = null
+    private lateinit var user: FirebaseUser
     private lateinit var db: FirebaseFirestore
 
-    private lateinit var loadingDialog: LoadingDialog
+    private lateinit var loading: LoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,38 +40,37 @@ class SignUpActivity : AppCompatActivity() {
         }
 
         auth = FirebaseAuth.getInstance()
-        user = auth.currentUser
         db = FirebaseFirestore.getInstance()
 
-        loadingDialog = LoadingDialog(this)
+        loading = LoadingDialog(this)
 
-        mainButton()
+        setButtonListener()
     }
 
-    private fun mainButton() {
+    private fun setButtonListener() {
         binding.apply {
             btnBack.setOnClickListener {
-                startActivity(Intent(this@SignUpActivity, SignInActivity::class.java))
-                finishAffinity()
+                onBackPressedDispatcher.onBackPressed()
             }
 
             btnSignup.setOnClickListener {
-                val name = etName.text.toString().trimEnd()
-                val email = etEmail.text.toString().trimEnd()
-                val password = etPassword.text.toString().trimEnd()
-                val confirmPassword = etConfirmPassword.text.toString().trimEnd()
+                val firstName = etFirstName.text.toString().trimStart().trimEnd()
+                val lastName = etLastName.text.toString().trimStart().trimEnd()
+                val email = etEmail.text.toString().trimStart().trimEnd()
+                val password = etPassword.text.toString().trimStart().trimEnd()
+                val confirmPassword = etConfirmPassword.text.toString().trimStart().trimEnd()
 
-                checkFieldData(name, email, password, confirmPassword)
+                checkFieldData(firstName , lastName , email , password , confirmPassword)
             }
         }
     }
 
-    private fun checkFieldData(name: String, email: String, password: String, confirmPassword: String) {
+    private fun checkFieldData(firstName: String , lastName: String , email: String , password: String , confirmPassword: String) {
         binding.apply {
-            if (name.isEmpty()) {
-                etName.error = "Nama tidak boleh kosong"
-                etName.requestFocus()
-            } else if (name.length < 4) {
+            if (firstName.isEmpty()) {
+                etFirstName.error = "Nama depan tidak boleh kosong"
+                etFirstName.requestFocus()
+            } else if (firstName.length < 4) {
                 Toast.makeText(this@SignUpActivity,
                     "Nama tidak boleh kurang dari 4 karakter",
                     Toast.LENGTH_SHORT
@@ -83,95 +82,99 @@ class SignUpActivity : AppCompatActivity() {
                 etEmail.error = "Email tidak valid"
                 etEmail.requestFocus()
             } else if (password.isEmpty()) {
-                etPassword.error = "Password tidak boleh kosong"
+                etPassword.error = "Kata sandi tidak boleh kosong"
                 etPassword.requestFocus()
             } else if (password.length < 8) {
-                etPassword.error = "Password tidak boleh kurang dari 8 karakter"
+                etPassword.error = "Kata sandi tidak boleh kurang dari 8 karakter"
                 etPassword.requestFocus()
             } else if (confirmPassword.isEmpty()) {
-                etConfirmPassword.error = "Konfirmasi Password tidak boleh kosong"
+                etConfirmPassword.error = "Konfirmasi kata sandi tidak boleh kosong"
                 etConfirmPassword.requestFocus()
             } else if (password != confirmPassword) {
-                etConfirmPassword.error = "Konfirmasi Password Harus Sesuai Dengan Password"
+                etConfirmPassword.error = "Konfirmasi kata sandi harus sama dengan kata sandi"
                 etConfirmPassword.requestFocus()
             } else {
-                signUp(name , email , password)
+                signUp(firstName , lastName , email , password)
             }
         }
     }
 
-    private fun signUp(name: String, email: String, password: String) {
-        loadingDialog.showLoading()
+    private fun signUp(firstName: String, lastName: String, email: String, password: String) {
+        loading.showLoading()
+
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    if (user != null) {
-                        updateUserProfile(user!!, name)     //user?.let { updateUserProfile(it , name) }
-                    }
+                    user = auth.currentUser!!
+                    updateUserProfile(firstName , lastName , email)
                 } else {
-                    val errorMessage = task.exception?.message ?: "Failed"
-                    Log.e("signup", errorMessage)
-                    Toast.makeText(this,
-                        errorMessage,
+                    val error = task.exception
+                    Log.e("signup", "signup failure", error)
+                    Toast.makeText(
+                        this,
+                        error?.message,
                         Toast.LENGTH_SHORT
                     ).show()
-                    loadingDialog.dismissLoading()
+                    loading.dismissLoading()
                 }
             }
     }
 
-    private fun updateUserProfile(user: FirebaseUser, name: String) {
+    private fun updateUserProfile(firstName: String , lastName: String , email: String) {
         UserProfileChangeRequest.Builder()
-            .setDisplayName(name)
+            .setDisplayName("$firstName $lastName")
             .build().also { userProfileChangeRequest ->
                 user.updateProfile(userProfileChangeRequest)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {
-                            addUserDetailInformation(name)
+                            addUserRole(firstName , lastName , email)
                         } else {
-                            val errorMessage = task.exception?.message ?: "Failed"
-                            Log.e("signup_profile", errorMessage)
-                            Toast.makeText(this,
-                                errorMessage,
+                            val error = task.exception
+                            Toast.makeText(
+                                this,
+                                error?.message,
                                 Toast.LENGTH_SHORT
                             ).show()
-                            loadingDialog.dismissLoading()
+                            loading.dismissLoading()
+                            Log.e("signup", "update user failure", error)
                         }
                     }
             }
     }
 
-    private fun addUserDetailInformation(name: String) {
+    private fun addUserRole(firstName: String , lastName: String , email: String) {
         val userData = hashMapOf(
-            "admin" to false,
-            "wallet" to false,
-            "balance" to 0
+            "admin" to false
         )
 
-        val docRef = db.collection("users").document(user!!.uid)
+        val docRef = db.collection("users").document(user.uid)
         docRef.set(userData)
             .addOnSuccessListener {
                 Prefs.isLogin = true
-                Prefs.name = name
+                Prefs.isGuest = false
+                Prefs.firstName = firstName
+                Prefs.lastName = lastName
+                Prefs.email = email
 
                 startActivity(Intent(this, SignUpPhotoActivity::class.java))
                 finishAffinity()
 
-                Toast.makeText(this,
-                    "Berhasil mendaftar",
+                Toast.makeText(
+                    this,
+                    "Berhasil mendaftar, silahkan mengupload foto profil",
                     Toast.LENGTH_SHORT
                 ).show()
 
-                loadingDialog.dismissLoading()
+                loading.dismissLoading()
             }
-            .addOnFailureListener {
-                val errorMessage = it.message ?: "Failed"
-                Log.e("signup_firestore", errorMessage)
-                Toast.makeText(this,
-                    errorMessage,
+            .addOnFailureListener { e ->
+                Toast.makeText(
+                    this,
+                    e.message,
                     Toast.LENGTH_SHORT
                 ).show()
-                loadingDialog.dismissLoading()
+                loading.dismissLoading()
+                Log.e("signup", "add user role failure", e)
             }
     }
 }

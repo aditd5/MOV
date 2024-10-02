@@ -6,7 +6,8 @@
     android:background="@color/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.home.HomeActivity">
+    tools:context=".view.home.HomeActivity"
+    android:clipChildren="false">
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/nav_host_fragment_activity_home"
@@ -26,7 +27,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="?android:attr/windowBackground"
+        android:background="@drawable/shape_bottom_navbar"
+        app:elevation="10dp"
+        app:itemActiveIndicatorStyle="@style/BottomNavigationView.ActiveIndicator"
+        app:itemTextColor="@color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"

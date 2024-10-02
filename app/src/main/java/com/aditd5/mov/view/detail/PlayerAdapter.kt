@@ -3,18 +3,18 @@ package com.aditd5.mov.view.detail
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.aditd5.mov.databinding.RowItemPlayerBinding
+import com.aditd5.mov.databinding.ItemPlayerBinding
 import com.squareup.picasso.Picasso
 
 class PlayerAdapter(private val actors: List<Map<String, String>>) : RecyclerView.Adapter<PlayerAdapter.ViewHolder>() {
 
-    class ViewHolder(val binding: RowItemPlayerBinding): RecyclerView.ViewHolder(binding.root)
+    class ViewHolder(val binding: ItemPlayerBinding): RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
         viewType: Int
     ): ViewHolder {
-        val binding = RowItemPlayerBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemPlayerBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return ViewHolder(binding)
     }
 

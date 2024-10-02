@@ -12,7 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.view.View
+import android.util.Log
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.Toast
@@ -26,7 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.aditd5.mov.databinding.ActivitySignUpPhotoBinding
-import com.aditd5.mov.databinding.ChooseImageDialogBinding
+import com.aditd5.mov.databinding.SelectImageDialogBinding
 import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.home.HomeActivity
@@ -34,9 +34,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.storageMetadata
-import com.squareup.picasso.Picasso
 import java.io.ByteArrayOutputStream
 
+@Suppress("DEPRECATION")
 class SignUpPhotoActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySignUpPhotoBinding
@@ -44,7 +44,6 @@ class SignUpPhotoActivity : AppCompatActivity() {
     private lateinit var storage: FirebaseStorage
     private lateinit var auth: FirebaseAuth
 
-    private lateinit var imgUri: Uri
     private lateinit var imgBitmap: Bitmap
 
     private lateinit var cameraLauncher: ActivityResultLauncher<Intent>
@@ -52,6 +51,8 @@ class SignUpPhotoActivity : AppCompatActivity() {
 
     private lateinit var imagePickerOldApi: ActivityResultLauncher<Intent>
     private lateinit var imagePickerNewApi: ActivityResultLauncher<PickVisualMediaRequest>
+
+    private lateinit var loading: LoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,9 +69,11 @@ class SignUpPhotoActivity : AppCompatActivity() {
         storage = FirebaseStorage.getInstance()
         auth = FirebaseAuth.getInstance()
 
+        loading = LoadingDialog(this)
+
         setupPermissions()
         setUsername()
-        mainButton()
+        setButtonListener()
     }
 
     private fun setupPermissions() {
@@ -105,23 +108,18 @@ class SignUpPhotoActivity : AppCompatActivity() {
     }
 
     private fun setUsername() {
-        val name = Prefs.name
-        binding.tvName.text = name
+        val fullname = "${Prefs.firstName} ${Prefs.lastName}"
+        binding.tvName.text = fullname
     }
 
-    private fun mainButton() {
+    private fun setButtonListener() {
         binding.apply {
             btnSelectPhoto.setOnClickListener {
                 showDialog()
             }
 
             btnSkip.setOnClickListener {
-                startActivity(
-                    Intent(
-                        this@SignUpPhotoActivity,
-                        HomeActivity::class.java
-                    )
-                )
+                startActivity(Intent(this@SignUpPhotoActivity, HomeActivity::class.java))
                 finishAffinity()
             }
         }
@@ -129,7 +127,7 @@ class SignUpPhotoActivity : AppCompatActivity() {
 
     private fun setBtnUpload() {
         binding.apply {
-            btnUpload.visibility = View.VISIBLE
+            btnUpload.isEnabled = true
 
             btnUpload.setOnClickListener {
                 uploadImgToFirebase(imgBitmap)
@@ -138,18 +136,18 @@ class SignUpPhotoActivity : AppCompatActivity() {
     }
 
     private fun showDialog() {
-        val chooseImageDialogBinding = ChooseImageDialogBinding.inflate(layoutInflater)
+        val dialogBinding = SelectImageDialogBinding.inflate(layoutInflater)
         val dialog = Dialog(this)
 
-        if (chooseImageDialogBinding.root.parent != null) {
-            (chooseImageDialogBinding.root.parent as ViewGroup).removeView(chooseImageDialogBinding.root)
+        if (dialogBinding.root.parent != null) {
+            (dialogBinding.root.parent as ViewGroup).removeView(dialogBinding.root)
         }
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCancelable(true)
-        dialog.setContentView(chooseImageDialogBinding.root)
+        dialog.setContentView(dialogBinding.root)
         dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
-        chooseImageDialogBinding.apply {
+        dialogBinding.apply {
             btnGallery.setOnClickListener {
                 pickImage()
                 dialog.dismiss()
@@ -169,7 +167,6 @@ class SignUpPhotoActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    @Suppress("DEPRECATION")
     private fun getBitmapFromUri(uri: Uri)  {
         val bitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
@@ -186,7 +183,6 @@ class SignUpPhotoActivity : AppCompatActivity() {
         cameraLauncher.launch(takePictureIntent)
     }
 
-    @Suppress("DEPRECATION")
     private fun handleTakePictureResult(result: ActivityResult) {
         if (result.resultCode == RESULT_OK) {
             result.data?.let {
@@ -226,8 +222,6 @@ class SignUpPhotoActivity : AppCompatActivity() {
     }
 
     private fun uploadImgToFirebase(imgBitmap: Bitmap) {
-//        binding.loading.visibility = View.VISIBLE
-        val loading = LoadingDialog(this)
         loading.showLoading()
 
         val storageRef = storage.reference
@@ -242,30 +236,24 @@ class SignUpPhotoActivity : AppCompatActivity() {
             .addOnCompleteListener { task->
                 if (task.isSuccessful) {
                     imagesRef.downloadUrl.addOnSuccessListener { uri->
-                        Picasso.get()
-                            .load(uri)
-                            .into(binding.ivProfile)
-
                         setUserProfilePhoto(uri)
-//                        binding.loading.visibility = View.INVISIBLE
                     }
                 } else {
-//                    binding.loading.visibility = View.INVISIBLE
+                    val error = task.exception
                     Toast.makeText(
                         this,
-                        "Gagal mengupload photo",
+                        error?.message,
                         Toast.LENGTH_SHORT
                     ).show()
                     loading.dismissLoading()
+                    Log.e("signup photo", "upload photo failure", error)
                 }
             }
     }
 
     private fun setUserProfilePhoto(uri: Uri) {
-        val loading = LoadingDialog(this)
-        loading.showLoading()
-
         val user = auth.currentUser
+
         if (user != null) {
             UserProfileChangeRequest.Builder()
                 .setPhotoUri(uri)
@@ -280,15 +268,17 @@ class SignUpPhotoActivity : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 startActivity(Intent(this, HomeActivity::class.java))
+                                finishAffinity()
                                 loading.dismissLoading()
                             } else {
-                                val errorMessage = task.exception?.message ?: "Failed"
+                                val error = task.exception
                                 Toast.makeText(
-                                    this@SignUpPhotoActivity,
-                                    errorMessage,
+                                    this,
+                                    error?.message,
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 loading.dismissLoading()
+                                Log.e("signup photo","update user profile failure", error)
                             }
                         }
                 }

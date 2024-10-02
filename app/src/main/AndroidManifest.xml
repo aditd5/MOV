@@ -6,6 +6,7 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
@@ -25,13 +26,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MOV"
         tools:targetApi="31">
+
         <activity
-            android:name=".view.SeatActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.RoutingActivity"
+            android:name=".view.onboarding.OnBoardingActivity"
             android:exported="true"
-            android:theme="@style/Theme.App.Starting">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.App.Starting"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -39,38 +40,45 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".view.history.HistoryActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.detail.DetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.auth.SignInActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.auth.SignUpActivity"
-            android:exported="false" />
+            android:name=".view.transaction.TransactionActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".view.checkout.CheckoutActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
-            android:name=".view.SelectSeatActivity"
-            android:exported="false" />
+            android:name=".view.auth.SignUpActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
+        <activity
+            android:name=".view.detail.DetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".view.auth.SignUpPhotoActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
             android:name=".view.home.HomeActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
-            android:name=".view.onboarding.OnBoardingOneActivity"
-            android:exported="false" />
+            android:name=".view.auth.SignInActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
         <activity
-            android:name=".view.onboarding.OnBoardingTwoActivity"
-            android:exported="false" />
-        <activity
-            android:name=".view.onboarding.OnBoardingThreeActivity"
-            android:exported="false" />
+            android:name=".view.seat.SelectSeatActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity" />
 
         <meta-data
             android:name="preloaded_fonts"

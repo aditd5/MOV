@@ -6,18 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
-    tools:context=".view.SelectSeatActivity">
-
-    <ImageView
-        android:id="@+id/btnBack"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_arrow_back"
-        android:importantForAccessibility="no" />
+    tools:context=".view.seat.SelectSeatActivity">
 
     <TextView
         android:id="@+id/textView"
@@ -49,7 +38,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
     <ImageView
-        android:id="@+id/imageView4"
+        android:id="@+id/imageView"
         android:layout_width="0dp"
         android:layout_height="100dp"
         android:layout_marginTop="8dp"
@@ -60,140 +49,108 @@
         android:importantForAccessibility="no" />
 
     <TextView
-        android:id="@+id/textView9"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:text="@string/layar_bioskop"
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView4" />
-
-<!--    <LinearLayout-->
-<!--        android:id="@+id/linearLayout"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="60dp"-->
-<!--        android:layout_marginStart="16dp"-->
-<!--        android:layout_marginTop="24dp"-->
-<!--        android:layout_marginEnd="16dp"-->
-<!--        android:orientation="horizontal"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/textView9">-->
-
-<!--        <ImageView-->
-<!--            android:id="@+id/seatA1"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_marginEnd="20dp"-->
-<!--            android:layout_weight="1"-->
-<!--            android:importantForAccessibility="no"-->
-<!--            android:src="@drawable/ic_seat" />-->
-
-<!--        <ImageView-->
-<!--            android:id="@+id/seatA2"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="1"-->
-<!--            android:importantForAccessibility="no"-->
-<!--            android:src="@drawable/ic_seat" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="2"-->
-<!--            android:fontFamily="@font/montserrat"-->
-<!--            android:gravity="center"-->
-<!--            android:text="@string/a"-->
-<!--            android:textColor="@color/white"-->
-<!--            android:textSize="20sp" />-->
-
-<!--        <ImageView-->
-<!--            android:id="@+id/seatA3"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_marginEnd="20dp"-->
-<!--            android:layout_weight="1"-->
-<!--            android:importantForAccessibility="no"-->
-<!--            android:src="@drawable/ic_seat" />-->
-
-<!--        <ImageView-->
-<!--            android:id="@+id/seatA4"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="1"-->
-<!--            android:importantForAccessibility="no"-->
-<!--            android:src="@drawable/ic_seat" />-->
-
-<!--    </LinearLayout>-->
-
-    <androidx.gridlayout.widget.GridLayout
-        android:id="@+id/seatLayout"
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:padding="16dp"
-        app:alignmentMode="alignMargins"
-        app:columnCount="10"
-        app:rowCount="7"
-        app:columnOrderPreserved="false"
+        android:text="@string/screen"
+        android:textColor="@color/white"
+        android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView9">
+        app:layout_constraintTop_toBottomOf="@+id/imageView" />
 
-    </androidx.gridlayout.widget.GridLayout>
-
-    <TextView
-        android:id="@+id/textView11"
-        android:layout_width="wrap_content"
+    <GridView
+        android:id="@+id/gridView"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
-        android:drawablePadding="10dp"
-        android:fontFamily="@font/montserrat_light"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:choiceMode="multipleChoice"
         android:gravity="center"
-        android:text="@string/empty"
-        android:textColor="@color/white"
-        android:textSize="12sp"
-        app:drawableLeftCompat="@drawable/ic_seat_empty"
+        android:horizontalSpacing="4dp"
+        android:numColumns="10"
+        android:verticalSpacing="4dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/seatLayout" />
+        app:layout_constraintTop_toBottomOf="@+id/textView2"
+        tools:listitem="@layout/item_seat" />
+
+    <com.facebook.shimmer.ShimmerFrameLayout
+        android:id="@+id/shimmerView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/gridView"
+        tools:duration="800">
+
+        <!-- List item -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:src="@drawable/seat" />
+
+    </com.facebook.shimmer.ShimmerFrameLayout>
 
     <TextView
-        android:id="@+id/textView12"
-        android:layout_width="wrap_content"
+        android:id="@+id/tvSeatAvailable"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="32dp"
-        android:drawablePadding="10dp"
+        android:drawablePadding="8dp"
+        android:gravity="center_vertical"
         android:fontFamily="@font/montserrat_light"
-        android:gravity="center"
-        android:text="@string/booked"
+        android:text="@string/available"
         android:textColor="@color/white"
         android:textSize="12sp"
-        app:drawableLeftCompat="@drawable/ic_seat_booked"
-        app:layout_constraintStart_toEndOf="@+id/textView11"
-        app:layout_constraintTop_toBottomOf="@+id/seatLayout" />
+        android:visibility="invisible"
+        app:drawableLeftCompat="@drawable/shape_seat_available"
+        app:layout_constraintEnd_toStartOf="@+id/tvSeatOccupied"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gridView" />
 
     <TextView
+        android:id="@+id/tvSeatOccupied"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:drawablePadding="8dp"
+        android:gravity="center_vertical"
+        android:fontFamily="@font/montserrat_light"
+        android:text="@string/occupied"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:visibility="invisible"
+        app:drawableLeftCompat="@drawable/shape_seat_occupied"
+        app:layout_constraintEnd_toStartOf="@+id/tvSeatSelected"
+        app:layout_constraintStart_toEndOf="@+id/tvSeatAvailable"
+        app:layout_constraintTop_toBottomOf="@+id/gridView" />
+
+    <TextView
+        android:id="@+id/tvSeatSelected"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="32dp"
-        android:drawablePadding="10dp"
+        android:layout_marginEnd="16dp"
+        android:drawablePadding="8dp"
         android:fontFamily="@font/montserrat_light"
-        android:gravity="center"
+        android:gravity="end|center_vertical"
         android:text="@string/selected"
         android:textColor="@color/white"
         android:textSize="12sp"
-        app:drawableLeftCompat="@drawable/ic_seat_selected"
-        app:layout_constraintStart_toEndOf="@+id/textView12"
-        app:layout_constraintTop_toBottomOf="@+id/seatLayout" />
+        android:visibility="invisible"
+        app:drawableStartCompat="@drawable/shape_seat_selected"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/tvSeatOccupied"
+        app:layout_constraintTop_toBottomOf="@+id/gridView" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnCheckout"
@@ -202,14 +159,11 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="32dp"
-        android:background="@drawable/btn_pink"
-        android:gravity="center"
-        android:text="@string/pilih_kursi"
-        android:textColor="@color/white"
-        android:textSize="16sp"
+        android:text="@string/select_seat"
+        style="@style/PinkButton.Stated"
+        android:enabled="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:visibility="invisible"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

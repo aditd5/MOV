@@ -6,31 +6,46 @@ import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.aditd5.mov.R
 import com.aditd5.mov.R.style
 import com.aditd5.mov.databinding.ActivityCheckoutBinding
-import com.aditd5.mov.databinding.CardTicketSuccessBinding
+import com.aditd5.mov.databinding.TicketSuccessDialogBinding
 import com.aditd5.mov.model.Checkout
 import com.aditd5.mov.model.Movie
 import com.aditd5.mov.util.CurrencyFormatter
-import com.aditd5.mov.util.LoadingDialog
-import com.aditd5.mov.view.SeatActivity
+import com.aditd5.mov.util.MidtransSdkConfig
+import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.home.HomeActivity
-import com.aditd5.mov.view.ticket.TicketFragment
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FieldValue.serverTimestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
+import com.midtrans.sdk.uikit.api.model.CustomerDetails
+import com.midtrans.sdk.uikit.api.model.ItemDetails
+import com.midtrans.sdk.uikit.api.model.SnapTransactionDetail
+import com.midtrans.sdk.uikit.api.model.TransactionResult
+import com.midtrans.sdk.uikit.external.UiKitApi
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants.STATUS_CANCELED
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants.STATUS_FAILED
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants.STATUS_INVALID
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants.STATUS_PENDING
+import com.midtrans.sdk.uikit.internal.util.UiKitConstants.STATUS_SUCCESS
+import java.security.MessageDigest
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Suppress("DEPRECATION")
 class CheckoutActivity : AppCompatActivity() {
@@ -40,15 +55,15 @@ class CheckoutActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var user: FirebaseUser
     private lateinit var db: FirebaseFirestore
-    private lateinit var listener: ListenerRegistration
 
     private var movie: Movie? = null
-    private var balance: Int? = null
     private var totalPrice: Int? = null
+    private var dateTimeEpoch: Long = 0L
+    private var orderId: String? = null
 
     private lateinit var seats: ArrayList<String>
 
-    private lateinit var loadingDialog: LoadingDialog
+    private lateinit var launcher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,10 +81,26 @@ class CheckoutActivity : AppCompatActivity() {
         user = auth.currentUser!!
         db = FirebaseFirestore.getInstance()
 
-        loadingDialog = LoadingDialog(this)
+        launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {    }
 
-        setButton()
+        initMidtransSDK()
+        setButtonListener()
         setData()
+    }
+
+    private fun initMidtransSDK() {
+        UiKitApi.Builder()
+            .withContext(this)
+            .withMerchantUrl(MidtransSdkConfig.MERCHANT_BASE_CHECKOUT_URL)
+            .withMerchantClientKey(MidtransSdkConfig.MERCHANT_CLIENT_KEY)
+            .enableLog(true)
+            .build()
+        uiKitCustomSetting()
+    }
+
+    private fun uiKitCustomSetting() {
+        val uIKitCustomSetting = UiKitApi.getDefaultInstance().uiKitSetting
+        uIKitCustomSetting.saveCardChecked = true
     }
 
     private fun setData() {
@@ -79,10 +110,15 @@ class CheckoutActivity : AppCompatActivity() {
             intent.getParcelableExtra("movie")
         }
         seats = intent.getStringArrayListExtra("seats")!!
+        dateTimeEpoch = intent.getLongExtra("dateTime", 0L)
         val price = movie!!.price
 
-        val checkoutList: List<Checkout> = seats.map { Checkout(it, price) }
+        val dateFormat = SimpleDateFormat("EEEE dd MMMM yyyy", Locale("id", "ID")).format(dateTimeEpoch)
+        val timeFormat = SimpleDateFormat("HH:mm", Locale("id", "ID")).format(dateTimeEpoch)
+        binding.tvDate.text = dateFormat
+        binding.tvTime.text = timeFormat
 
+        val checkoutList: List<Checkout> = seats.map { Checkout(it, price) }
         val checkoutAdapter = CheckoutAdapter(checkoutList)
 
         binding.rvCheckout.apply {
@@ -91,133 +127,194 @@ class CheckoutActivity : AppCompatActivity() {
         }
 
         totalPrice = seats.size * price!!
-        binding.tvTotalprice.text = CurrencyFormatter().numberFormat(totalPrice!!)
-
-        getBalance()
+        binding.tvTotalprice.text = CurrencyFormatter().formatRupiah(totalPrice!!)
     }
 
-    private fun getBalance() {
-        val docRef = db.collection("users").document(user.uid)
-        listener = docRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Toast.makeText(
-                    this,
-                    error.message,
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null && snapshot.exists()) {
-                val isActive = snapshot.get("wallet")
-                if (isActive == true) {
-                    val mBalance = snapshot.get("balance")
-                    val iBalance = mBalance.toString().toInt()
-                    balance = iBalance
-                    binding.tvBalance.text = CurrencyFormatter().numberFormat(iBalance)
-                }
-            } else {
-                Toast.makeText(
-                    this,
-                    "Data wallet tidak ditemukan",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
-
-    private fun setButton() {
+    private fun setButtonListener() {
         binding.apply {
             btnPay.setOnClickListener {
-                loadingDialog.showLoading()
-                if (balance!! < totalPrice!!) {
-                    Toast.makeText(
-                        this@CheckoutActivity,
-                        "Saldo tidak mencukupi, silahkan topup terlebih dahulu",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    loadingDialog.dismissLoading()
-                } else {
-                    checkout()
-                }
+                goToPayment()
             }
 
             btnCancel.setOnClickListener {
-                startActivity(Intent(this@CheckoutActivity, SeatActivity::class.java))
+                onBackPressedDispatcher.onBackPressed()
             }
         }
     }
 
-    private fun checkout() {
-        val now = Timestamp.now()
-        val transactionData = hashMapOf(
-            "userId" to user.uid,
-            "movieId" to movie!!.movieId,
-            "seats" to seats,
-            "price" to totalPrice,
-            "createdAt" to now,
-        )
+    private fun goToPayment() {
+        val movieId = movie!!.movieId
+        val movieName = movie!!.title
+        val qty = seats.size
+        val price = movie!!.price!!.toDouble()
+        val amount = totalPrice!!.toDouble()
+        val firstName = Prefs.firstName
+        val lastName = Prefs.lastName
+        val email = Prefs.email
+        orderId = "MOV-" + System.currentTimeMillis().toString()
 
-        val docRef = db.collection("transactions").document()
-        docRef.set(transactionData)
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    updateBalance()
-                } else {
-                    Toast.makeText(
-                        this,
-                        it.exception?.message,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    loadingDialog.dismissLoading()
-                }
-            }
+        UiKitApi.getDefaultInstance().startPaymentUiFlow(
+            activity = this ,
+            launcher = launcher ,
+            transactionDetails = SnapTransactionDetail(
+                orderId = orderId!! ,     // id order
+                grossAmount = amount
+            ) ,
+            customerDetails = CustomerDetails(
+                firstName = firstName ,
+                lastName =  lastName ,
+                customerIdentifier = email ,
+                email = email ,
+//                phone = "085310102020"
+            ) ,
+            itemDetails = listOf(
+                ItemDetails(
+                    id = movieId ,     // id barang
+                    price = price ,
+                    quantity = qty ,
+                    name = movieName
+                )
+            )
+        )
     }
 
-    private fun updateBalance() {
-       val docRef = db.collection("users").document(user.uid)
-        docRef.update("balance", FieldValue.increment(-totalPrice!!.toLong()))  //mengurangi balance akun sesuai dengan harga
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    successDialog()
-                } else {
-                    Toast.makeText(
-                        this,
-                        it.exception?.message,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    loadingDialog.dismissLoading()
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int , resultCode: Int , data: Intent?) {
+        if (resultCode == RESULT_OK) {
+            val transactionResult =
+                data?.getParcelableExtra<TransactionResult>(UiKitConstants.KEY_TRANSACTION_RESULT)
+            if (transactionResult != null) {
+                val transactionId = transactionResult.transactionId
+                val paymentMethod = transactionResult.paymentType
+
+                when (transactionResult.status) {
+                    STATUS_SUCCESS -> {
+                        saveTransactionToFirestore(transactionId!! , paymentMethod , "success")
+                        Toast.makeText(
+                            this ,
+                            "Transaction Finished" ,
+                            Toast.LENGTH_LONG
+                        ).show()
+                        binding.apply {
+                            btnPay.isVisible = false
+                            btnCancel.isVisible = false
+                        }
+                    }
+
+                    STATUS_PENDING -> {
+                        Toast.makeText(
+                            this ,
+                            "Transaction Pending" ,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    STATUS_FAILED -> {
+                        Toast.makeText(
+                            this ,
+                            "Transaction Failed" ,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    STATUS_CANCELED -> {
+                        Toast.makeText(
+                            this ,
+                            "Transaction Cancelled" ,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    STATUS_INVALID -> {
+                        Toast.makeText(
+                            this ,
+                            "Transaction Invalid" ,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    else -> {
+                        Toast.makeText(
+                            this ,
+                            transactionResult.status ,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 }
+            } else {
+                Toast.makeText(
+                    this ,
+                    "Transaction Invalid" ,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
+        super.onActivityResult(requestCode , resultCode , data)
     }
 
     private fun successDialog() {
-        val dialogBinding: CardTicketSuccessBinding = CardTicketSuccessBinding.inflate(this.layoutInflater)
+        val dialogBinding = TicketSuccessDialogBinding.inflate(this.layoutInflater)
         val dialog = Dialog(this, style.DialogTheme)
 
         if (dialogBinding.root.parent != null) {
             (dialogBinding.root.parent as ViewGroup).removeView(dialogBinding.root)
         }
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         dialog.setContentView(dialogBinding.root)
         dialog.setCancelable(false)
         dialog.show()
 
         dialogBinding.btnTicket.setOnClickListener {
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.nav_host_fragment_activity_home, TicketFragment())
-            transaction.commit()
+            val intent = Intent(this, HomeActivity::class.java)
+            intent.putExtra("openFragment","ticket")
+            startActivity(intent)
+            finishAffinity()
+            dialog.dismiss()
         }
 
         dialogBinding.btnHome.setOnClickListener {
             startActivity(Intent(this, HomeActivity::class.java))
             finishAffinity()
+            dialog.dismiss()
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        listener.remove()
+    private fun saveTransactionToFirestore(
+        transactionId: String ,
+        paymentMethod: String ,
+        status: String
+    ) {
+        val transactionData = hashMapOf(
+            "userId" to user.uid ,
+            "movieId" to movie!!.movieId ,
+            "orderId" to orderId ,
+            "seats" to seats ,
+            "price" to totalPrice ,
+            "passcode" to generatePasscode(transactionId) ,
+            "status" to status ,
+            "paymentMethod" to paymentMethod ,
+            "showTime" to Timestamp(dateTimeEpoch) ,
+            "createdAt" to serverTimestamp()
+        )
+
+        val docRef = db.collection("transactions").document(transactionId)
+        docRef.set(transactionData)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    if (status == "success") {
+                        successDialog()
+                    }
+                } else {
+                    saveTransactionToFirestore(transactionId , paymentMethod , status)
+                    Log.e("checkout", "save transaction" , it.exception)
+                }
+            }
+    }
+
+    private fun generatePasscode(transactionId: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(transactionId.toByteArray())
+        val hash = bytes.joinToString("") { "%02x".format(it) }
+        return hash.take(6).uppercase()
     }
 }

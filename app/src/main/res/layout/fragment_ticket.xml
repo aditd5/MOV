@@ -2,45 +2,122 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
     tools:context=".view.ticket.TicketFragment">
 
     <TextView
-        android:id="@+id/textView5"
+        android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
-        android:fontFamily="@font/montserrat"
-        android:text="History"
+        android:fontFamily="@font/montserrat_bold"
+        android:text="@string/ticket"
         android:textColor="@color/white"
-        android:textSize="16sp"
+        android:textSize="24sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tvTotal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnActiveTicket"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
         android:layout_marginTop="8dp"
-        android:fontFamily="@font/montserrat"
-        android:text="Total"
-        android:textColor="@color/white"
-        android:textSize="16sp"
+        android:text="@string/active_ticket"
+        style="@style/BlueGreyButton.Small"
+        app:layout_constraintEnd_toStartOf="@+id/btnTicketHistory"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView5" />
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:layout_width="409dp"
-        android:layout_height="840dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="1dp"
-        android:layout_marginEnd="1dp"
+    <View
+        android:id="@+id/btnActiveTicketLine"
+        android:layout_width="0dp"
+        android:layout_height="2dp"
+        android:background="@color/colorPink"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="@+id/btnActiveTicket"
+        app:layout_constraintStart_toStartOf="@+id/btnActiveTicket"
+        app:layout_constraintTop_toBottomOf="@+id/btnActiveTicket" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnTicketHistory"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/ticket_history"
+        style="@style/BlueGreyButton.Small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnActiveTicket"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <View
+        android:id="@+id/btnTicketHistoryLine"
+        android:layout_width="0dp"
+        android:layout_height="2dp"
+        android:background="@color/colorPink"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="@+id/btnTicketHistory"
+        app:layout_constraintStart_toStartOf="@+id/btnTicketHistory"
+        app:layout_constraintTop_toBottomOf="@+id/btnTicketHistory" />
+
+    <com.facebook.shimmer.ShimmerFrameLayout
+        android:id="@+id/shimmerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvTotal" />
+        app:layout_constraintTop_toBottomOf="@+id/btnActiveTicket"
+        tools:duration="800">
+
+        <!-- List item -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <include layout="@layout/item_ticket_blank" />
+            <include layout="@layout/item_ticket_blank" />
+        </LinearLayout>
+
+    </com.facebook.shimmer.ShimmerFrameLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTicket"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnActiveTicket"
+        tools:listitem="@layout/item_history" />
+
+    <TextView
+        android:id="@+id/tvInformation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:fontFamily="@font/montserrat_semibold"
+        android:lines="2"
+        android:text="@string/information"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/rvTicket" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

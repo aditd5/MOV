@@ -33,7 +33,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/layoutName"
+        android:id="@+id/layoutFirstName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -45,38 +45,42 @@
         app:layout_constraintTop_toBottomOf="@+id/textView">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etName"
+            android:id="@+id/etFirstName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/name"
-            android:inputType="textEmailAddress"
+            android:hint="@string/first_name"
+            android:fontFamily="@font/montserrat"
+            android:textSize="16sp"
+            android:inputType="textPersonName"
             android:textColor="@color/whiteGrey"
             tools:layout_editor_absoluteX="31dp" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
-<!--    <com.google.android.material.textfield.TextInputLayout-->
-<!--        android:id="@+id/layoutUsername"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginStart="16dp"-->
-<!--        android:layout_marginTop="16dp"-->
-<!--        android:layout_marginEnd="16dp"-->
-<!--        android:textColorHint="@color/whiteGrey"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/layoutName">-->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutLastName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:textColorHint="@color/whiteGrey"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layoutFirstName">
 
-<!--        <com.google.android.material.textfield.TextInputEditText-->
-<!--            android:id="@+id/etUsername"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:hint="@string/username"-->
-<!--            android:inputType="textPersonName"-->
-<!--            android:textColor="@color/whiteGrey"-->
-<!--            tools:layout_editor_absoluteX="31dp" />-->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etLastName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/last_name"
+            android:fontFamily="@font/montserrat"
+            android:textSize="16sp"
+            android:inputType="textPersonName"
+            android:textColor="@color/whiteGrey"
+            tools:layout_editor_absoluteX="31dp" />
 
-<!--    </com.google.android.material.textfield.TextInputLayout>-->
+    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/layoutEmail"
@@ -88,13 +92,15 @@
         android:textColorHint="@color/whiteGrey"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutName">
+        app:layout_constraintTop_toBottomOf="@+id/layoutLastName">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/email"
+            android:fontFamily="@font/montserrat"
+            android:textSize="16sp"
             android:inputType="textEmailAddress"
             android:textColor="@color/whiteGrey"
             tools:layout_editor_absoluteX="31dp" />
@@ -120,6 +126,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/password"
+            android:fontFamily="@font/montserrat"
+            android:textSize="16sp"
             android:inputType="textPassword"
             android:textColor="@color/whiteGrey"
             tools:layout_editor_absoluteX="31dp" />
@@ -144,7 +152,9 @@
             android:id="@+id/etConfirmPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/konfirmasi_password"
+            android:hint="@string/password_confirmation"
+            android:fontFamily="@font/montserrat"
+            android:textSize="16sp"
             android:inputType="textPassword"
             android:textColor="@color/whiteGrey"
             tools:layout_editor_absoluteX="31dp" />
@@ -154,18 +164,14 @@
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btnSignup"
         android:layout_width="0dp"
-        android:layout_height="50dp"
+        android:layout_height="48dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="32dp"
-        android:background="@drawable/btn_pink"
-        android:gravity="center"
-        android:text="@string/memulai"
-        android:textColor="@color/white"
-        android:textSize="16sp"
+        android:text="@string/register"
+        style="@style/PinkButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,14 +1,22 @@
 package com.aditd5.mov.view.auth
 
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.util.Patterns
+import android.view.ViewGroup
+import android.view.Window
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.aditd5.mov.R
 import com.aditd5.mov.databinding.ActivitySignInBinding
+import com.aditd5.mov.databinding.ResetPasswordDialogBinding
 import com.aditd5.mov.util.LoadingDialog
 import com.aditd5.mov.util.Prefs
 import com.aditd5.mov.view.home.HomeActivity
@@ -20,7 +28,7 @@ class SignInActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
 
-    private lateinit var loadingDialog: LoadingDialog
+    private lateinit var loading: LoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,16 +44,16 @@ class SignInActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
-        loadingDialog = LoadingDialog(this)
+        loading = LoadingDialog(this)
 
-        mainButton()
+        setButtonListener()
     }
 
-    private fun mainButton() {
+    private fun setButtonListener() {
         binding.apply {
             btnSignin.setOnClickListener {
-                val email = etEmail.text.toString().trimEnd()
-                val password = etPassword.text.toString().trimEnd()
+                val email = etEmail.text.toString().trimStart().trimEnd()
+                val password = etPassword.text.toString().trimStart().trimEnd()
 
                 if (email.isEmpty()) {
                     etEmail.error = "Email tidak boleh kosong"
@@ -54,7 +62,7 @@ class SignInActivity : AppCompatActivity() {
                     etEmail.error = "Email tidak valid"
                     etEmail.requestFocus()
                 } else if (password.isEmpty()) {
-                    etPassword.error = "Password tidak boleh kosong"
+                    etPassword.error = "Kata sandi tidak boleh kosong"
                     etPassword.requestFocus()
                 } else {
                     signIn(email, password)
@@ -64,40 +72,101 @@ class SignInActivity : AppCompatActivity() {
             btnSignup.setOnClickListener {
                 startActivity(Intent(this@SignInActivity, SignUpActivity::class.java))
             }
+
+            btnForgotPassword.setOnClickListener {
+                resetPasswordDialog()
+            }
         }
     }
 
     private fun signIn(email: String, password: String) {
-        loadingDialog.showLoading()
+        loading.showLoading()
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) {
                 if (it.isSuccessful) {
                     val user = auth.currentUser
-                    val name = user!!.displayName
+                    val fullname = user!!.displayName
+                    val uri = user.photoUrl
                     Toast.makeText(
                         this,
-                        "Selamat Datang $name",
+                        "Selamat Datang $fullname",
                         Toast.LENGTH_SHORT
                     ).show()
+
+                    Prefs.isLogin = true
+                    Prefs.isGuest = false
+                    Prefs.firstName = fullname!!.split(" ")[0]
+                    Prefs.lastName = fullname.split(" ").getOrNull(1) ?: ""
+                    Prefs.email = email
+                    Prefs.imgProfileUri = uri.toString()
+
                     startActivity(Intent(this, HomeActivity::class.java))
                     finishAffinity()
-                    Prefs.isLogin = true
-                    Prefs.name = name.toString()
-                    loadingDialog.dismissLoading()
+
+                    loading.dismissLoading()
                 } else {
+                    val error = it.exception
                     Toast.makeText(
                         this,
-                        "${it.exception?.message}",
+                        error?.message,
                         Toast.LENGTH_SHORT
                     ).show()
-                    loadingDialog.dismissLoading()
-
-//                    if (it.exception == "FirebaseAuthInvalidUserException") {
-//                        Toast.makeText(this, "Email tidak terdaftar", Toast.LENGTH_SHORT).show()
-//                    } else {
-//
-//                    }
+                    loading.dismissLoading()
+                    Log.e("signin", "signin failure", error)
                 }
             }
+    }
+
+    private fun resetPasswordDialog() {
+        val dialogBinding = ResetPasswordDialogBinding.inflate(this.layoutInflater)
+        val dialog = Dialog(this, R.style.DialogTheme)
+
+        if (dialogBinding.root.parent != null) {
+            (dialogBinding.root.parent as ViewGroup).removeView(dialogBinding.root)
+        }
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.setContentView(dialogBinding.root)
+        dialog.setCancelable(true)
+        dialog.show()
+
+        dialogBinding.apply {
+            btnResetPassword.setOnClickListener {
+                val email = etEmail.text.toString().trimStart().trimEnd()
+
+                if (email.isEmpty()) {
+                    etEmail.error = "Email tidak boleh kosong"
+                    etEmail.requestFocus()
+                } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                    etEmail.error = "Email tidak valid"
+                    etEmail.requestFocus()
+                } else {
+                    loading.showLoading()
+
+                    auth.sendPasswordResetEmail(email)
+                        .addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                Toast.makeText(
+                                    this@SignInActivity,
+                                    "Email reset password telah dikirim",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                loading.dismissLoading()
+                                dialog.dismiss()
+                            } else {
+                                val error = it.exception
+                                Toast.makeText(
+                                    this@SignInActivity,
+                                    error?.message,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                loading.dismissLoading()
+                                dialog.dismiss()
+                                Log.e("signin", "reset password failure", error)
+                            }
+                        }
+                }
+            }
+        }
     }
 }

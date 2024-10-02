@@ -5,6 +5,8 @@
     <color name="background">#14153D</color>
     <color name="colorPink">#ED4169</color>
     <color name="colorBlueGrey">#292A50</color>
+    <color name="colorBtnDisabled">#1F2051</color>
+    <color name="colorGrey">#76717C</color>
     <color name="whiteGrey">#AEAEAE</color>
 
     <color name="colorSeatAvailable">#008577</color>

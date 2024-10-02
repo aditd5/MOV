@@ -59,18 +59,27 @@ dependencies {
     implementation("com.google.firebase:firebase-database:21.0.0")
     implementation("com.google.firebase:firebase-storage:21.0.0")
     implementation("com.google.firebase:firebase-auth:23.0.0")
-    implementation("com.google.firebase:firebase-crashlytics:19.0.0")
-    implementation("com.google.firebase:firebase-firestore:25.0.0")
+    implementation("com.google.firebase:firebase-crashlytics:19.1.0")
+    implementation("com.google.firebase:firebase-firestore:25.1.0")
 
     //Kotpref shared preference
     implementation ("com.chibatching.kotpref:kotpref:2.13.2")
 
-    implementation ("com.github.bumptech.glide:glide:4.16.0")
-
-    //circle image profile
+    //Circle image profile
     implementation ("de.hdodenhof:circleimageview:3.1.0")
 
+    //Load image
     implementation ("com.squareup.picasso:picasso:2.71828")
 
+    //Splash Screen
     implementation ("androidx.core:core-splashscreen:1.0.1")
+
+    //QR Code Generator
+    implementation ("com.github.androidmads:QRGenerator:1.0.1")
+
+    //Shimmer Recycler View Loading
+    implementation ("com.facebook.shimmer:shimmer:0.5.0")
+
+    //Midtrans
+    implementation ("com.midtrans:uikit:2.0.0-SANDBOX")
 }
